@@ -25,7 +25,7 @@ echo "Start time: $(date)"
 echo ""
 
 # Run the build script with --clean
-cd ~/osu-hidl
+cd ~/osu-hpc-ai
 bash build_scripts/mri/build_pytorch_mri.sh --clean
 
 echo ""

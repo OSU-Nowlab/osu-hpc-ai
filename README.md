@@ -341,7 +341,7 @@ For more performance results, visit [Here](https://hpc-ai.engineering.osu.edu/pe
 If you use this software in your research, please cite:
 
 ```bibtex
-@software{osu_hidl,
+@software{osu_hpc_ai,
   title = {OSU HPC-AI: High-Performance Inference and Deep Learning Stack},
   author = {Network-Based Computing Laboratory, The Ohio State University},
   url = {https://github.com/OSU-Nowlab/osu-hpc-ai},
