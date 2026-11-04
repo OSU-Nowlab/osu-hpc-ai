@@ -118,6 +118,7 @@ For using distributed training with MPI:
 - [SGLang Structured Output Guide](docs/user-guides/sglang-structured.md)
 - [MCR-DL Backend Guide](docs/user-guides/mcr-dl-backend.md)
 - [MAC-Attention User Guide](docs/user-guides/mac-attention.md)
+- [NIMBLE User Guide](https://github.com/OSU-Nowlab/NIMBLE/blob/main/README.md#user-apis)
 For troubleshooting and cluster-specific setup:
 - [Troubleshooting Guide](docs/troubleshooting.md)
 - [MRI Cluster Setup](docs/cluster-guides/mri-setup.md)
@@ -290,6 +291,25 @@ llm = LLM(model="meta-llama/Llama-2-7b-hf", tensor_parallel_size=4)
 outputs = llm.generate(prompts, sampling_params=params)
 ```
 
+### MoE All-to-All with NIMBLE
+
+```python
+# frameworks/nimble/examples/python/01_all_to_all_single.py
+import torch.distributed as dist
+import nimble
+
+dist.init_process_group("nccl")
+nimble.init()                       # the default communicator over the world, on cuda:LOCAL_RANK
+nimble.all_to_all_single(out, inp)  # a drop-in for dist.all_to_all_single
+```
+
+Run with:
+```bash
+torchrun --nproc-per-node 4 frameworks/nimble/examples/python/01_all_to_all_single.py
+```
+
+SGLang and vLLM, patched from `frameworks/nimble/patches`, take NIMBLE as their MoE all-to-all backend: `--moe-a2a-backend nimble` and `--all2all-backend nimble`.
+
 See [examples/](examples/) for more examples.
 
 ## Supported Systems
@@ -347,6 +367,17 @@ GPT-2 training performance using NanoGPT benchmark on leading HPC systems. MVAPI
 
 For more performance results, visit [Here](https://hpc-ai.engineering.osu.edu/performance/pytorch-ddp-gpu/).
 
+### MoE Layer with NIMBLE
+
+DeepSeek-V3's MoE layer on the real model in SGLang and vLLM at EP 8, 16 and 32 (2, 4 and 8 GB200 NVL4 nodes): the same dispatcher over NCCL and over NIMBLE, so only the transport differs; with NIMBLE dedup a token crosses the network to a node once.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/OSU-Nowlab/NIMBLE/v1.0.0/docs/figures/readme/sglang_moe_layer.png" alt="DeepSeek-V3 MoE layer in SGLang" width="45%">
+  <img src="https://raw.githubusercontent.com/OSU-Nowlab/NIMBLE/v1.0.0/docs/figures/readme/vllm_moe_layer.png" alt="DeepSeek-V3 MoE layer in vLLM" width="45%">
+</p>
+
+At 16K tokens per rank the MoE layer in SGLang is 1.21-1.28x faster with NIMBLE than with NCCL, and 1.32-1.53x with dedup (only dedup's smallest batch at EP 8 is slower). In vLLM, NIMBLE is 1.09-1.24x faster at every batch and EP size, and dedup reaches 1.20-1.34x at the largest batches. See the [NIMBLE README](https://github.com/OSU-Nowlab/NIMBLE#readme) for the details and how to run them.
+
 ## Citation
 
 If you use this software in your research, please cite:
@@ -358,6 +389,19 @@ If you use this software in your research, please cite:
   url = {https://github.com/OSU-Nowlab/osu-hpc-ai},
   year = {2025},
   license = {Apache-2.0}
+}
+```
+
+For NIMBLE, please also cite:
+
+```bibtex
+@inproceedings{yao2026skew,
+  title = {From Skew to Symmetry: Node-Interconnect Multi-Path Balancing with Execution-time Planning for Modern GPU Clusters},
+  author = {Yao, Jinghan and Kandadi, Kaushik and Ramesh, Bharath and Subramoni, Hari and Panda, Dhabaleswar K.},
+  booktitle = {IEEE International Parallel and Distributed Processing Symposium (IPDPS)},
+  year = {2026},
+  eprint = {2604.00317},
+  archivePrefix = {arXiv}
 }
 ```
 
