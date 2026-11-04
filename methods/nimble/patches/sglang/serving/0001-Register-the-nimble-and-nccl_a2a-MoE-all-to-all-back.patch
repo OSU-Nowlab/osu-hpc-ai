@@ -1,0 +1,225 @@
+From 68738a204776e44336549a45be466893df684778 Mon Sep 17 00:00:00 2001
+From: YJHMITWEB <YJHMITWEB@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 13:06:46 -0500
+Subject: [PATCH 1/2] Register the nimble and nccl_a2a MoE all-to-all backends
+
+--moe-a2a-backend nimble selects NIMBLE's MoE dispatcher, imported from the nimble package
+(nimble.integrations.sglang.NimbleEPDispatcher; put <NIMBLE>/python on PYTHONPATH): DeepEP-normal dispatch and
+combine over NIMBLE's AllToAllV, so the backend joins the DeepEP-class backends everywhere they are listed (the
+dispatcher factory, the two-batch-overlap wrapper, DeepEPMoE, the FP8 method and the models' routing checks).
+SGLANG_NIMBLE_DISPATCHER=fused (default) or dedup selects its mode. nccl_a2a is the same dispatcher over
+torch.distributed's all_to_all_single on the expert-parallel group, i.e. NCCL: the baseline that differs from
+nimble only in the transport.
+---
+ python/sglang/srt/batch_overlap/two_batch_overlap.py   |  6 ++++++
+ python/sglang/srt/layers/moe/ep_moe/layer.py           |  5 ++++-
+ python/sglang/srt/layers/moe/fused_moe_triton/layer.py |  2 ++
+ python/sglang/srt/layers/moe/utils.py                  | 10 ++++++++++
+ python/sglang/srt/layers/quantization/fp8.py           |  2 ++
+ python/sglang/srt/models/deepseek_v2.py                |  6 ++++++
+ python/sglang/srt/models/glm4_moe.py                   |  6 ++++++
+ python/sglang/srt/models/qwen2_moe.py                  |  2 ++
+ python/sglang/srt/server_args.py                       |  4 ++++
+ 9 files changed, 42 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/batch_overlap/two_batch_overlap.py b/python/sglang/srt/batch_overlap/two_batch_overlap.py
+index b6ff7b9..017a8a8 100644
+--- a/python/sglang/srt/batch_overlap/two_batch_overlap.py
++++ b/python/sglang/srt/batch_overlap/two_batch_overlap.py
+@@ -1153,6 +1153,12 @@ class MaybeTboDeepEPDispatcher(BaseDispatcher):
+             self._inners = [
+                 PplxDispatcher(**kwargs) for _ in range(num_inner_dispatchers)
+             ]
++        elif get_moe_a2a_backend().is_nimble() or get_moe_a2a_backend().is_nccl_a2a():
++            from nimble.integrations.sglang import NimbleEPDispatcher
++
++            self._inners = [
++                NimbleEPDispatcher(**kwargs) for _ in range(num_inner_dispatchers)
++            ]
+ 
+     @property
+     def expert_mask_gpu(self):
+diff --git a/python/sglang/srt/layers/moe/ep_moe/layer.py b/python/sglang/srt/layers/moe/ep_moe/layer.py
+index d445bfc..dda2f0a 100644
+--- a/python/sglang/srt/layers/moe/ep_moe/layer.py
++++ b/python/sglang/srt/layers/moe/ep_moe/layer.py
+@@ -139,7 +139,8 @@ class DeepEPMoE(FusedMoE):
+             quant_config is None
+             and self.w13_weight.dtype == torch.bfloat16
+             and get_moe_runner_backend().is_deep_gemm()
+-            and (get_moe_a2a_backend().is_deepep() or get_moe_a2a_backend().is_pplx())
++            and (get_moe_a2a_backend().is_deepep() or get_moe_a2a_backend().is_pplx()
++                 or get_moe_a2a_backend().is_nimble() or get_moe_a2a_backend().is_nccl_a2a())
+             and not _is_npu
+             and not _is_hip
+         ):
+@@ -360,6 +361,8 @@ def get_moe_impl_class(quant_config: Optional[QuantizationConfig]):
+         or get_moe_a2a_backend().is_mooncake()
+         or get_moe_a2a_backend().is_nixl()
+         or get_moe_a2a_backend().is_pplx()
++        or get_moe_a2a_backend().is_nimble()
++        or get_moe_a2a_backend().is_nccl_a2a()
+     ):
+         return DeepEPMoE
+     return FusedMoE
+diff --git a/python/sglang/srt/layers/moe/fused_moe_triton/layer.py b/python/sglang/srt/layers/moe/fused_moe_triton/layer.py
+index a1f0e7f..cdde058 100644
+--- a/python/sglang/srt/layers/moe/fused_moe_triton/layer.py
++++ b/python/sglang/srt/layers/moe/fused_moe_triton/layer.py
+@@ -177,6 +177,8 @@ def create_moe_dispatcher(moe_runner_config: MoeRunnerConfig) -> BaseDispatcher:
+         or a2a_backend.is_mori()
+         or a2a_backend.is_nixl()
+         or a2a_backend.is_pplx()
++        or a2a_backend.is_nimble()
++        or a2a_backend.is_nccl_a2a()
+     ):
+         return MaybeTboDeepEPDispatcher(
+             group=_get_deepep_comm_group(a2a_backend),
+diff --git a/python/sglang/srt/layers/moe/utils.py b/python/sglang/srt/layers/moe/utils.py
+index 88c07c1..29cfca4 100644
+--- a/python/sglang/srt/layers/moe/utils.py
++++ b/python/sglang/srt/layers/moe/utils.py
+@@ -43,6 +43,8 @@ class MoeA2ABackend(Enum):
+     MEGAMOE = "megamoe"
+     DEEPEP_V2 = "deepep_v2"
+     PPLX = "pplx"
++    NIMBLE = "nimble"
++    NCCL_A2A = "nccl_a2a"
+     CUSTOMIZED = "customized"
+ 
+     @classmethod
+@@ -66,6 +68,12 @@ class MoeA2ABackend(Enum):
+     def is_nixl(self):
+         return self == MoeA2ABackend.NIXL
+ 
++    def is_nimble(self):
++        return self == MoeA2ABackend.NIMBLE
++
++    def is_nccl_a2a(self):
++        return self == MoeA2ABackend.NCCL_A2A
++
+     def is_flashinfer(self):
+         return self == MoeA2ABackend.FLASHINFER
+ 
+@@ -579,6 +587,8 @@ def is_deepep_class_backend() -> bool:
+         or b.is_mooncake()
+         or b.is_mori()
+         or b.is_pplx()
++        or b.is_nimble()
++        or b.is_nccl_a2a()
+     )
+ 
+ 
+diff --git a/python/sglang/srt/layers/quantization/fp8.py b/python/sglang/srt/layers/quantization/fp8.py
+index 406ce76..8d293f8 100644
+--- a/python/sglang/srt/layers/quantization/fp8.py
++++ b/python/sglang/srt/layers/quantization/fp8.py
+@@ -1138,6 +1138,8 @@ class Fp8MoEMethod(FusedMoEMethodBase):
+                 moe_a2a_backend.is_deepep()
+                 or moe_a2a_backend.is_mooncake()
+                 or moe_a2a_backend.is_nixl()
++                or moe_a2a_backend.is_nimble()
++                or moe_a2a_backend.is_nccl_a2a()
+             ):
+                 return False
+             from sglang.srt.layers import deep_gemm_wrapper
+diff --git a/python/sglang/srt/models/deepseek_v2.py b/python/sglang/srt/models/deepseek_v2.py
+index 3470b65..b14b41f 100644
+--- a/python/sglang/srt/models/deepseek_v2.py
++++ b/python/sglang/srt/models/deepseek_v2.py
+@@ -739,6 +739,8 @@ class DeepseekV2MoE(nn.Module):
+                 or get_moe_a2a_backend().is_pplx()
+                 or get_moe_a2a_backend().is_mooncake()
+                 or get_moe_a2a_backend().is_nixl()
++                or get_moe_a2a_backend().is_nimble()
++                or get_moe_a2a_backend().is_nccl_a2a()
+                 or get_moe_a2a_backend().is_mori()
+                 or get_moe_a2a_backend().is_ascend_fuseep()
+                 or get_moe_a2a_backend().is_flashinfer()
+@@ -831,6 +833,8 @@ class DeepseekV2MoE(nn.Module):
+             get_moe_a2a_backend().is_deepep()
+             or get_moe_a2a_backend().is_mooncake()
+             or get_moe_a2a_backend().is_nixl()
++            or get_moe_a2a_backend().is_nimble()
++            or get_moe_a2a_backend().is_nccl_a2a()
+             or get_moe_a2a_backend().is_mori()
+             or get_moe_a2a_backend().is_ascend_fuseep()
+             or get_moe_a2a_backend().is_deepep_v2()
+@@ -853,6 +857,8 @@ class DeepseekV2MoE(nn.Module):
+             get_moe_a2a_backend().is_deepep()
+             or get_moe_a2a_backend().is_mooncake()
+             or get_moe_a2a_backend().is_nixl()
++            or get_moe_a2a_backend().is_nimble()
++            or get_moe_a2a_backend().is_nccl_a2a()
+             or get_moe_a2a_backend().is_mori()
+             or get_moe_a2a_backend().is_ascend_fuseep()
+             or get_moe_a2a_backend().is_flashinfer()
+diff --git a/python/sglang/srt/models/glm4_moe.py b/python/sglang/srt/models/glm4_moe.py
+index 8f2791b..e5fe63a 100644
+--- a/python/sglang/srt/models/glm4_moe.py
++++ b/python/sglang/srt/models/glm4_moe.py
+@@ -465,6 +465,8 @@ class Glm4MoeSparseMoeBlock(nn.Module):
+                     if get_moe_a2a_backend().is_deepep()
+                     or get_moe_a2a_backend().is_mooncake()
+                     or get_moe_a2a_backend().is_nixl()
++                    or get_moe_a2a_backend().is_nimble()
++                    or get_moe_a2a_backend().is_nccl_a2a()
+                     or get_moe_a2a_backend().is_mori()
+                     or get_moe_a2a_backend().is_ascend_fuseep()
+                     or get_moe_a2a_backend().is_flashinfer()
+@@ -510,6 +512,8 @@ class Glm4MoeSparseMoeBlock(nn.Module):
+             get_moe_a2a_backend().is_deepep()
+             or get_moe_a2a_backend().is_mooncake()
+             or get_moe_a2a_backend().is_nixl()
++            or get_moe_a2a_backend().is_nimble()
++            or get_moe_a2a_backend().is_nccl_a2a()
+             or get_moe_a2a_backend().is_mori()
+             or get_moe_a2a_backend().is_ascend_fuseep()
+         ):
+@@ -531,6 +535,8 @@ class Glm4MoeSparseMoeBlock(nn.Module):
+             get_moe_a2a_backend().is_deepep()
+             or get_moe_a2a_backend().is_mooncake()
+             or get_moe_a2a_backend().is_nixl()
++            or get_moe_a2a_backend().is_nimble()
++            or get_moe_a2a_backend().is_nccl_a2a()
+             or get_moe_a2a_backend().is_mori()
+             or get_moe_a2a_backend().is_ascend_fuseep()
+             or get_moe_a2a_backend().is_flashinfer()
+diff --git a/python/sglang/srt/models/qwen2_moe.py b/python/sglang/srt/models/qwen2_moe.py
+index ea6cf62..b0a3d70 100644
+--- a/python/sglang/srt/models/qwen2_moe.py
++++ b/python/sglang/srt/models/qwen2_moe.py
+@@ -163,6 +163,8 @@ def can_fuse_shared_expert(
+         or get_moe_a2a_backend().is_deepep()
+         or get_moe_a2a_backend().is_deepep_v2()
+         or get_moe_a2a_backend().is_mori()
++        or get_moe_a2a_backend().is_nimble()
++        or get_moe_a2a_backend().is_nccl_a2a()
+     ):
+         return False
+ 
+diff --git a/python/sglang/srt/server_args.py b/python/sglang/srt/server_args.py
+index 0e9597b..359457a 100644
+--- a/python/sglang/srt/server_args.py
++++ b/python/sglang/srt/server_args.py
+@@ -2378,6 +2378,8 @@ class ServerArgs:
+             "deepep_v2",
+             "ascend_tp",
+             "pplx",
++            "nimble",
++            "nccl_a2a",
+         ],
+         Arg(
+             help="Choose the backend for MoE A2A.",
+@@ -2393,6 +2395,8 @@ class ServerArgs:
+                 "deepep_v2",
+                 "pplx",
+                 "ascend_tp",
++                "nimble",
++                "nccl_a2a",
+             ],
+             resolvable=True,
+         ),
+-- 
+2.47.3
+

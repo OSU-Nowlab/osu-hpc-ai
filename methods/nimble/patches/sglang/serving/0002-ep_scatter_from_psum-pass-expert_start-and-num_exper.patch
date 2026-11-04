@@ -1,0 +1,28 @@
+From 31ae11b19edde5c5dd3f2d0b4f7860d4445ef86d Mon Sep 17 00:00:00 2001
+From: YJHMITWEB <YJHMITWEB@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 13:06:49 -0500
+Subject: [PATCH 2/2] ep_scatter_from_psum: pass expert_start and num_experts
+ to the scatter kernel
+
+The kernel gained the two parameters and this launch (the DeepEP v2 contiguous-layout pre-permute) did not pass them.
+The DeepEP v2 path hands local expert ids, so expert_start is 0.
+---
+ python/sglang/kernels/ops/moe/ep_moe_kernels.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/python/sglang/kernels/ops/moe/ep_moe_kernels.py b/python/sglang/kernels/ops/moe/ep_moe_kernels.py
+index 98c6c78..de27ab8 100644
+--- a/python/sglang/kernels/ops/moe/ep_moe_kernels.py
++++ b/python/sglang/kernels/ops/moe/ep_moe_kernels.py
+@@ -1315,6 +1315,8 @@ def ep_scatter_from_psum(
+         output_index,
+         output_index.stride(0),
+         output_index.stride(1),
++        0,  # expert_start: the DeepEP v2 path hands local expert ids
++        num_experts,
+         topk_num=recv_topk.shape[1],
+         num_warps=num_warps,
+         HIDDEN_SIZE=hidden_size,
+-- 
+2.47.3
+

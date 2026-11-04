@@ -1,0 +1,17 @@
+NIMBLE 1.0.0 release wheel, built 2026-11-04T03:54:55Z on c101-003 (aarch64)
+source: the NIMBLE v1 release (its python/ and tools/build_wheel.sh)
+libnimble built by tools/build_lib_manylinux.sh:
+  image: manylinux_2_28_aarch64.sif (NAME="AlmaLinux" VERSION="8.10 (Cerulean Leopard)" )
+  glibc: ldd (GNU libc) 2.28
+  host compiler: g++ (GCC) 14.2.1 20250110 (Red Hat 14.2.1-11)
+  CUDA: Build cuda_13.2.r13.2/compiler.37668154_0
+  cmake: cmake version 4.4.4
+  source: the NIMBLE v1 release
+  image sha256: d110c9dbfa5fed75522bc0877913bae372ebfcf3927f9cb69ad6106a69cc7659
+platform tag: manylinux_2_28_aarch64 (auditwheel repair; libcuda.so.1 and libibverbs.so.1 are the system's)
+libnimble symbol floors: GLIBCXX_3.4.22 CXXABI_1.3.11 GLIBC_2.17 
+libnimble needs: libcuda.so.1 libpthread.so.0 libdl.so.2 librt.so.1 libibverbs.so.1 libstdc++.so.6 libm.so.6 libgcc_s.so.1 libc.so.6 ld-linux-aarch64.so.1 
+libnimble (the Collective): 4 GPUs per node (NIMBLE_GPUS_PER_NODE); GPU code md5 d436f014ea4cd8264d875535fb80f6fe (equal to the GPU code of the library this release was measured with, libnimble.so.2.23.0)
+a5bd34d64d0d31d3cfd1804c51f49321  pkg/nimble/lib/libnimble.so
+wheel: nimble_gpu-1.0.0-py3-none-manylinux_2_28_aarch64.whl sha256 fa5425e38ee6e1dea60db1da7c62707c39a6a4f736f03138aecbe51206c7cc02
+frameworks: nimble_frameworks-1.0.0.tar.gz sha256 61387b276071446d1211edb0528ecebb898413a76d40b48cb0f3963ba6b39254

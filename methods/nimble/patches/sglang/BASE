@@ -1,0 +1,3 @@
+fbf8f1dbf69f4f91ac6654383227e82a8a932217
+# SGLang upstream (https://github.com/sgl-project/sglang) main, 2026-09: "[Fix] Coordinate FullCG prefix variants
+# across DP ranks (#37888)". The serving and harness series apply to this commit.

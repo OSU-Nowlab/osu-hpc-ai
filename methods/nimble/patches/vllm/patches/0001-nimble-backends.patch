@@ -1,0 +1,119 @@
+--- a/vllm/config/parallel.py
++++ b/vllm/config/parallel.py
+@@ -48,6 +48,8 @@
+     "mori_high_throughput",
+     "mori_low_latency",
+     "nixl_ep",
++    "nimble",
++    "nccl_a2a",
+     "allgather_reducescatter",
+     "flashinfer_all2allv",  # temporary alias for flashinfer_nvlink_two_sided
+     "flashinfer_nvlink_two_sided",
+@@ -203,6 +205,8 @@
+     - "mori_high_throughput": MoRI EP with InterNodeV1 for multi-node
+     - "mori_low_latency": MoRI EP with InterNodeV1LL for multi-node
+     - "nixl_ep": Use nixl-ep kernels
++    - "nimble": Use NIMBLE's MoE dispatcher over its AllToAllV (the nimble package)
++    - "nccl_a2a": Use NIMBLE's MoE dispatcher over NCCL's all-to-all (the baseline)
+     - "flashinfer_nvlink_one_sided": Use flashinfer high-throughput a2a kernels
+     - "flashinfer_nvlink_two_sided": Use flashinfer two-sided kernels for mnnvl"""
+ 
+@@ -723,6 +727,8 @@
+                 "mori_high_throughput",
+                 "mori_low_latency",
+                 "nixl_ep",
++                "nimble",
++                "nccl_a2a",
+             )
+             and self.enable_expert_parallel
+             and self.tensor_parallel_size > 1
+--- a/vllm/model_executor/layers/fused_moe/config.py
++++ b/vllm/model_executor/layers/fused_moe/config.py
+@@ -1074,6 +1074,10 @@
+         return self.use_all2all_kernels and self.all2all_backend == "deepep_low_latency"
+ 
+     @property
++    def use_nimble_kernels(self):
++        return self.use_all2all_kernels and self.all2all_backend in ("nimble", "nccl_a2a")
++
++    @property
+     def use_fi_nvl_two_sided_kernels(self):
+         return self.use_all2all_kernels and (
+             self.all2all_backend == "flashinfer_all2allv"
+@@ -1495,6 +1499,10 @@
+         return self.moe_parallel_config.use_ag_rs_all2all_kernels
+ 
+     @property
++    def use_nimble_kernels(self):
++        return self.moe_parallel_config.use_nimble_kernels
++
++    @property
+     def use_nixl_ep_kernels(self):
+         return self.moe_parallel_config.use_nixl_ep_kernels
+ 
+--- a/vllm/distributed/device_communicators/cuda_communicator.py
++++ b/vllm/distributed/device_communicators/cuda_communicator.py
+@@ -197,6 +197,13 @@
+                 self.all2all_manager = DeepEPLLAll2AllManager(
+                     self.cpu_group, tcp_store_group
+                 )
++            elif self.all2all_backend in ("nimble", "nccl_a2a"):
++                # NIMBLE's MoE dispatcher (the nimble package: <NIMBLE>/python on PYTHONPATH)
++                from nimble.integrations.vllm import NimbleAll2AllManager
++
++                self.all2all_manager = NimbleAll2AllManager(
++                    self.cpu_group, tcp_store_group
++                )
+             elif self.all2all_backend in (
+                 "mori_high_throughput",
+                 "mori_low_latency",
+--- a/vllm/model_executor/layers/fused_moe/all2all_utils.py
++++ b/vllm/model_executor/layers/fused_moe/all2all_utils.py
+@@ -214,6 +214,14 @@
+             rank_expert_offset=all2all_manager.rank * moe.num_local_experts,
+         )
+ 
++    elif moe.use_nimble_kernels:
++        # NIMBLE's MoE dispatcher (the nimble package: <NIMBLE>/python on PYTHONPATH)
++        from nimble.integrations.vllm import NimblePrepareAndFinalize
++
++        prepare_finalize = NimblePrepareAndFinalize.make(
++            moe, quant_config, all2all_manager
++        )
++
+     elif moe.use_deepep_ll_kernels:
+         assert quant_config is not None
+         global_to_physical = physical_to_global = local_expert_global_ids = None
+--- a/vllm/config/compilation.py
++++ b/vllm/config/compilation.py
+@@ -1261,6 +1261,19 @@
+             )
+             self.cudagraph_mode = CUDAGraphMode.NONE
+ 
++        # NIMBLE's MoE dispatcher (--all2all-backend nimble / nccl_a2a) reads its count table on the host in every
++        # dispatch, as DeepEP's high-throughput dispatch does: no CUDA graphs
++        if (
++            all2all_backend in ("nimble", "nccl_a2a")
++            and data_parallel_size > 1
++            and self.cudagraph_mode != CUDAGraphMode.NONE
++        ):
++            logger.info(
++                "NIMBLE: disabling CUDA graphs (the MoE dispatch reads its "
++                "count table on the host)."
++            )
++            self.cudagraph_mode = CUDAGraphMode.NONE
++
+     def set_splitting_ops_for_attn_fusion(self):
+         assert self.pass_config.fuse_attn_quant
+         if self.splitting_ops is None:
+--- a/vllm/model_executor/layers/fused_moe/experts/trtllm_fp8_moe.py
++++ b/vllm/model_executor/layers/fused_moe/experts/trtllm_fp8_moe.py
+@@ -206,6 +206,8 @@
+             or moe_parallel_config.use_deepep_v2_kernels
+             or moe_parallel_config.use_fi_nvl_one_sided_kernels
+             or moe_parallel_config.use_fi_nvl_two_sided_kernels
++            # NIMBLE (--all2all-backend nimble / nccl_a2a): Standard format, FP32 block scales, global top-k ids
++            or moe_parallel_config.use_nimble_kernels
+         ) and not moe_parallel_config.enable_eplb
+ 
+     @staticmethod
