@@ -57,7 +57,8 @@ osu-hpc-ai/
 │   ├── deepspeed/         # DeepSpeed training examples
 │   ├── megatron-lm/       # Megatron-LM dummy training example
 │   ├── inference/         # vLLM inference examples
-│   └── mac-attention/     # MAC-Attention workflow example
+│   ├── mac-attention/     # MAC-Attention workflow example
+│   └── nimble/            # NIMBLE Python API and serving examples
 ├── benchmarks/             # Performance benchmarks
 │   ├── communication/     # MPI communication benchmarks
 │   └── mac-attention/     # MAC-Attention performance benchmarks
@@ -190,6 +191,7 @@ GPU AllToAllV for irregular traffic, with an MoE dispatcher for SGLang and vLLM.
 - **Repository**: [OSU-Nowlab/NIMBLE](https://github.com/OSU-Nowlab/NIMBLE)
 - **Release**: [v1.0.0](https://github.com/OSU-Nowlab/NIMBLE/releases/tag/v1.0.0), a pre-built wheel for Linux aarch64
 - **Features**: per-call path planning across the node's NICs, no user buffer registration, SGLang and vLLM MoE backends
+- **Examples**: [examples/nimble](examples/nimble/README.md)
 - **Paper**: [From Skew to Symmetry (IPDPS 2026)](https://arxiv.org/abs/2604.00317)
 
 ### MAC-Attention
@@ -299,7 +301,7 @@ outputs = llm.generate(prompts, sampling_params=params)
 ### MoE All-to-All with NIMBLE
 
 ```python
-# frameworks/nimble/examples/python/01_all_to_all_single.py
+# examples/nimble/python/01_all_to_all_single.py
 import torch.distributed as dist
 import nimble
 
@@ -310,7 +312,7 @@ nimble.all_to_all_single(out, inp)  # a drop-in for dist.all_to_all_single
 
 Run with:
 ```bash
-torchrun --nproc-per-node 4 frameworks/nimble/examples/python/01_all_to_all_single.py
+torchrun --nproc-per-node 4 examples/nimble/python/01_all_to_all_single.py
 ```
 
 SGLang and vLLM, patched from `frameworks/nimble/patches`, take NIMBLE as their MoE all-to-all backend: `--moe-a2a-backend nimble` and `--all2all-backend nimble`.

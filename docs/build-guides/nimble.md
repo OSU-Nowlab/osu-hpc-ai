@@ -37,11 +37,11 @@ pip install frameworks/nimble/wheel/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aar
 python -c "import nimble; print(nimble.__version__)"    # 1.0.0
 
 # One node, 4 GPUs
-torchrun --nproc-per-node 4 frameworks/nimble/examples/python/01_all_to_all_single.py
+torchrun --nproc-per-node 4 examples/nimble/python/01_all_to_all_single.py
 # 01_all_to_all_single: OK on 4 ranks (...)
 ```
 
-On several nodes: `sbatch -N NODES frameworks/nimble/examples/python/launch_slurm.sh FILE`.
+On several nodes: `sbatch -N NODES examples/nimble/python/launch_slurm.sh FILE`. All the examples: [examples/nimble](../../examples/nimble/README.md).
 
 ## SGLang and vLLM
 
