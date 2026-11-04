@@ -18,6 +18,7 @@ The OSU HPC-AI stack provides:
 - **Deep Learning Frameworks**: Custom builds of PyTorch, DeepSpeed, vLLM, and SGLang with MPI integration
 - **Serving Methods**: MAC-Attention for reuse-based decode acceleration
 - **Communication Runtime**: MCR-DL for modular, backend-agnostic distributed communication
+- **MoE All-to-All**: NIMBLE, a GPU AllToAllV for irregular traffic with an MoE dispatcher for SGLang and vLLM
 - **Optimized Collective Operations**: GPUDirect RDMA support for high-performance distributed training
 - **HPC-Ready**: Pre-configured for common HPC systems (MRI, Vista, etc.)
 
@@ -37,7 +38,8 @@ osu-hpc-ai/
 │   ├── deepspeed/          # DeepSpeed with ZeRO optimization
 │   ├── sglang/             # SGLang structured generation
 │   ├── vllm/               # vLLM high-throughput inference
-│   └── mcr-dl/             # MCR-DL communication runtime
+│   ├── mcr-dl/             # MCR-DL communication runtime
+│   └── nimble/             # NIMBLE AllToAllV and MoE dispatcher (pre-built wheel)
 ├── methods/                # Reusable method implementations
 │   └── mac-attention/      # MAC-Attention source package and kernels
 ├── build_scripts/          # Automated build scripts
@@ -174,6 +176,15 @@ Structured generation language serving framework.
 
 - **Repository**: [OSU-Nowlab/sglang](https://github.com/OSU-Nowlab/sglang)
 - **Features**: RadixAttention, multi-GPU serving
+
+### NIMBLE
+
+GPU AllToAllV for irregular traffic, with an MoE dispatcher for SGLang and vLLM.
+
+- **Repository**: [OSU-Nowlab/NIMBLE](https://github.com/OSU-Nowlab/NIMBLE)
+- **Release**: [v1.0.0](https://github.com/OSU-Nowlab/NIMBLE/releases/tag/v1.0.0), a pre-built wheel for Linux aarch64
+- **Features**: per-call path planning across the node's NICs, no user buffer registration, SGLang and vLLM MoE backends
+- **Paper**: [From Skew to Symmetry (IPDPS 2026)](https://arxiv.org/abs/2604.00317)
 
 ### MAC-Attention
 
@@ -370,6 +381,7 @@ Individual components may have additional licenses:
 - DeepSpeed: Apache-2.0 (see `frameworks/deepspeed/LICENSE`)
 - vLLM: Apache-2.0 (see `frameworks/vllm/LICENSE`)
 - SGLang: Apache-2.0 (see `frameworks/sglang/LICENSE`)
+- NIMBLE: Apache-2.0 (see `frameworks/nimble/LICENSE`)
 
 ## Support
 

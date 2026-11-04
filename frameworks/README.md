@@ -1,10 +1,10 @@
 # Deep Learning Frameworks
 
-This directory contains deep learning framework integrations with the OSU HPC-AI stack, all built atop MVAPICH-Plus for optimized CUDA-aware MPI communication.
+This directory contains deep learning framework integrations with the OSU HPC-AI stack. PyTorch, DeepSpeed, SGLang, vLLM and MCR-DL are built atop MVAPICH-Plus for optimized CUDA-aware MPI communication; NIMBLE is a pre-built AllToAllV library that moves its data with its own GPU kernels and RDMA writes, and plugs into SGLang and vLLM as their MoE all-to-all backend.
 
 ## Overview
 
-All frameworks in this directory follow a consistent structure:
+The frameworks built from source follow a consistent structure:
 
 ```
 frameworks/<framework>/
@@ -14,6 +14,8 @@ frameworks/<framework>/
 
 # Build guides are in docs/build-guides/
 ```
+
+NIMBLE's submodule holds its release instead: the pre-built wheel (`wheel/`), the SGLang and vLLM patches (`patches/`) and examples (`examples/`).
 
 ## Build Order
 
