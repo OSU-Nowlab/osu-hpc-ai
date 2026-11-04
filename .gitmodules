@@ -18,3 +18,7 @@
 	path = frameworks/mcr-dl
 	url = https://github.com/OSU-Nowlab/MCR-DL.git
 	branch = main
+[submodule "frameworks/nimble"]
+	path = frameworks/nimble
+	url = https://github.com/OSU-Nowlab/NIMBLE.git
+	branch = main

@@ -693,6 +693,34 @@ python -c "import mcr_dl; print('MCR-DL installed')"
 
 See [../docs/build-guides/mcr-dl.md](../docs/build-guides/mcr-dl.md) for the full build guide.
 
+---
+
+## NIMBLE
+
+**Repository**: [OSU-Nowlab/NIMBLE](https://github.com/OSU-Nowlab/NIMBLE)  
+**Branch**: `main`  
+**Status**: Release v1  
+**Version**: 1.0.0
+
+### Overview
+
+GPU AllToAllV for irregular traffic, with an MoE dispatcher for SGLang and vLLM (GB200 / B200).
+
+### Installation
+
+```bash
+# Submodule already initialized in frameworks/nimble
+pip install frameworks/nimble/wheel/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aarch64.whl
+```
+
+### Verification
+
+```bash
+python -c "import nimble; print(nimble.__version__)"
+```
+
+See the [NIMBLE README](https://github.com/OSU-Nowlab/NIMBLE#readme) for the APIs, the examples, and the SGLang and vLLM patches.
+
 ## Performance Benchmarks
 
 See [../benchmarks/README.md](../benchmarks/README.md) for comprehensive benchmarks.
