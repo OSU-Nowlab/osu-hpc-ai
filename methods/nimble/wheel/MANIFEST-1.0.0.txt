@@ -1,4 +1,4 @@
-NIMBLE 1.0.0 release wheel, built 2026-11-04T03:54:55Z on c101-003 (aarch64)
+NIMBLE 1.0.0 release wheel
 source: the NIMBLE v1 release (its python/ and tools/build_wheel.sh)
 libnimble built by tools/build_lib_manylinux.sh:
   image: manylinux_2_28_aarch64.sif (NAME="AlmaLinux" VERSION="8.10 (Cerulean Leopard)" )
