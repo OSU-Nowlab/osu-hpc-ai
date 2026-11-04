@@ -110,6 +110,7 @@ For detailed build instructions and system-specific guides, see:
 - [MAC-Attention Build Guide](docs/build-guides/mac-attention.md)
 - [Megatron-LM Build Guide](docs/build-guides/megatron-lm.md)
 - [verl Build Guide](docs/build-guides/verl.md)
+- [NIMBLE Install Guide](docs/build-guides/nimble.md)
 
 For using distributed training with MPI:
 - [PyTorch DDP with MPI Guide](docs/user-guides/pytorch-ddp.md)
@@ -118,7 +119,11 @@ For using distributed training with MPI:
 - [SGLang Structured Output Guide](docs/user-guides/sglang-structured.md)
 - [MCR-DL Backend Guide](docs/user-guides/mcr-dl-backend.md)
 - [MAC-Attention User Guide](docs/user-guides/mac-attention.md)
+
+For MoE all-to-all with NIMBLE:
 - [NIMBLE User Guide](https://github.com/OSU-Nowlab/NIMBLE/blob/main/README.md#user-apis)
+- [NIMBLE Serving Guide (SGLang and vLLM)](https://github.com/OSU-Nowlab/NIMBLE/blob/main/patches/README.md)
+
 For troubleshooting and cluster-specific setup:
 - [Troubleshooting Guide](docs/troubleshooting.md)
 - [MRI Cluster Setup](docs/cluster-guides/mri-setup.md)

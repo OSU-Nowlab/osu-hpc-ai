@@ -733,7 +733,7 @@ pip install frameworks/nimble/wheel/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aar
 python -c "import nimble; print(nimble.__version__)"
 ```
 
-See the [NIMBLE README](https://github.com/OSU-Nowlab/NIMBLE#readme) for the APIs, the examples, and the SGLang and vLLM patches.
+See [../docs/build-guides/nimble.md](../docs/build-guides/nimble.md) for the full install guide, and the [NIMBLE README](https://github.com/OSU-Nowlab/NIMBLE#readme) for the APIs, the examples, and the SGLang and vLLM patches.
 
 ## Performance Benchmarks
 
