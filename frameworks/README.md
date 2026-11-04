@@ -25,6 +25,7 @@ Frameworks must be built in dependency order:
 4. **SGLang** - Depends on PyTorch
 5. **vLLM** - Depends on PyTorch (pip-installed)
 6. **MCR-DL** - Depends on PyTorch
+7. **NIMBLE** - Pre-built wheel (pip-installed)
 
 ## Quick Status
 
@@ -35,6 +36,7 @@ Frameworks must be built in dependency order:
 | SGLang | Stable | <5 min | No (Yes for serving) | Passing |
 | vLLM | Stable | <1 min (pip) | No (Yes for inference) | Passing |
 | MCR-DL | Stable | <5 min | No (Yes for testing) | Passing |
+| NIMBLE | Release v1 | <1 min (pip) | No (Yes to run) | Passing (examples) |
 
 ---
 
@@ -700,13 +702,23 @@ See [../docs/build-guides/mcr-dl.md](../docs/build-guides/mcr-dl.md) for the ful
 **Repository**: [OSU-Nowlab/NIMBLE](https://github.com/OSU-Nowlab/NIMBLE)  
 **Branch**: `main`  
 **Status**: Release v1  
-**Version**: 1.0.0
+**Version**: [1.0.0](https://github.com/OSU-Nowlab/NIMBLE/releases/tag/v1.0.0)
 
 ### Overview
 
 GPU AllToAllV for irregular traffic, with an MoE dispatcher for SGLang and vLLM (GB200 / B200).
 
 ### Installation
+
+Requires Linux aarch64 with glibc 2.28 or later, Python 3.10-3.15, 4 GPUs per node, the NVIDIA driver and rdma-core.
+
+#### Option 1: From the release
+
+```bash
+pip install https://github.com/OSU-Nowlab/NIMBLE/releases/download/v1.0.0/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aarch64.whl
+```
+
+#### Option 2: From the submodule
 
 ```bash
 # Submodule already initialized in frameworks/nimble
