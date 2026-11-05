@@ -18,6 +18,7 @@ $HOME/nimble-venv/bin/python -c "import nimble; print(nimble.__version__)"     #
 ```bash
 srun -N 1 --pty bash                     # a shell on a compute node with 4 GPUs
 cd $NIMBLE/examples/python
+export CC=gcc                            # 07's first-use build needs gcc (some sites set CC to nvc)
 R="$HOME/nimble-venv/bin/python -m torch.distributed.run --nproc-per-node 4"
 $R 01_all_to_all_single.py
 $R 02_alltoallv_counts.py
