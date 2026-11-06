@@ -4,7 +4,7 @@
 #
 #   sbatch -N 2 sglang_server.sh                     # --moe-a2a-backend nimble, fused (one AllToAllV per direction)
 #   MODE=dedup sbatch -N 2 sglang_server.sh          # the dedup mode (two or more nodes; sets NIMBLE_DEDUP=1)
-#   BACKEND=nccl_a2a sbatch -N 2 sglang_server.sh    # the same dispatcher over NCCL, for an A/B
+#   BACKEND=nccl_a2a sbatch -N 2 sglang_server.sh    # the same dispatcher over NCCL, for comparison
 #   CLIENT=0 sbatch -N 2 sglang_server.sh            # keep serving on the first node's port until the job ends
 #
 # Paths and site settings: site_env.sh. Each node's log: logs/sglang_<backend>_<mode>_<job>/node<i>.log.
@@ -14,6 +14,7 @@
 set -u
 HERE=${EXAMPLES_DIR:-${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")" && pwd)}}
 source "$HERE/site_env.sh"
+site_check sglang || exit 1
 BACKEND=${BACKEND:-nimble} MODE=${MODE:-fused} PORT=${PORT:-30000} DIST_PORT=${DIST_PORT:-30500} CLIENT=${CLIENT:-1}
 HOSTS=($(scontrol show hostnames "$SLURM_JOB_NODELIST"))
 NODES=${#HOSTS[@]} EP=$((4 * ${#HOSTS[@]})) HEAD=${HOSTS[0]}

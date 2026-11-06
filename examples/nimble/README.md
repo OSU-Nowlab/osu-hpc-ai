@@ -6,7 +6,7 @@ The Python API in [python/](python/), and DeepSeek-V3 served by SGLang and vLLM 
 
 ```bash
 git clone https://github.com/OSU-Nowlab/NIMBLE.git
-NIMBLE=$PWD/NIMBLE                       # in osu-hpc-ai: NIMBLE=$PWD/frameworks/nimble
+NIMBLE=$PWD/NIMBLE                       # in a clone of osu-hpc-ai: NIMBLE=$PWD/frameworks/nimble
 python3 -m venv $HOME/nimble-venv
 $HOME/nimble-venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cu130
 $HOME/nimble-venv/bin/pip install https://github.com/OSU-Nowlab/NIMBLE/releases/download/v1.0.0/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aarch64.whl
@@ -69,13 +69,16 @@ grep -h -E ": (OK|MISMATCH|UNEXPECTED)" slurm-*.out
 ```bash
 python3 -m venv $HOME/vllm-venv
 $HOME/vllm-venv/bin/pip install vllm==0.30.0 https://github.com/OSU-Nowlab/NIMBLE/releases/download/v1.0.0/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aarch64.whl
+$HOME/vllm-venv/bin/pip install --no-deps --target $HOME/vllm-extras sgl-deep-gemm==0.1.7 apache-tvm-ffi==0.1.11   # DeepGEMM for vLLM's FP8 layers
+$HOME/vllm-venv/bin/pip install --no-deps --target $HOME/nimble-assets/nccl nvidia-nccl-cu13==2.30.7   # the one NCCL every process loads
 $HOME/vllm-venv/bin/pip download vllm==0.30.0 --no-deps -d $HOME/wheels
 $NIMBLE/patches/vllm/apply.sh $HOME/vllm-nimble-site --from-wheel $HOME/wheels/vllm-0.30.0-cp38-abi3-manylinux_2_28_aarch64.whl
 cd $NIMBLE/examples/serving
-export MODEL=/path/to/DeepSeek-V3 VLLM_VENV=$HOME/vllm-venv VLLM_SITE=$HOME/vllm-nimble-site   # every setting: site_env.sh
+export MODEL=$SCRATCH/models/DeepSeek-V3 VLLM_VENV=$HOME/vllm-venv VLLM_SITE=$HOME/vllm-nimble-site   # every setting: site_env.sh
+$HOME/vllm-venv/bin/hf download deepseek-ai/DeepSeek-V3 --revision e815299b0bcbac849fa540c768ef21845365c9eb --local-dir $MODEL   # 642 GB, once
 S="sbatch -N 2"
-$S vllm_server.sh                             # fused
-MODE=dedup $S vllm_server.sh                  # dedup
+J=$($S --parsable vllm_server.sh | tail -n 1)          # fused; it saves its compiled kernels
+MODE=dedup $S --dependency=afterok:$J vllm_server.sh   # dedup, after fused, from those kernels
 squeue -u $USER
 grep -h "client: OK\|client: FAILED" slurm-*.out
 ```
@@ -85,9 +88,11 @@ grep -h "client: OK\|client: FAILED" slurm-*.out
 ```bash
 $NIMBLE/patches/sglang/apply.sh $HOME/sglang-nimble
 python3 -m venv $HOME/sglang-venv
-$HOME/sglang-venv/bin/pip install -e $HOME/sglang-nimble/python https://github.com/OSU-Nowlab/NIMBLE/releases/download/v1.0.0/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aarch64.whl
+SGLANG_BUILD_RUST_EXTS=none $HOME/sglang-venv/bin/pip install -e $HOME/sglang-nimble/python https://github.com/OSU-Nowlab/NIMBLE/releases/download/v1.0.0/nimble_gpu-1.0.0-py3-none-manylinux_2_28_aarch64.whl   # no Rust toolchain needed
+$HOME/sglang-venv/bin/pip install --no-deps --target $HOME/nimble-assets/nccl nvidia-nccl-cu13==2.30.7   # the one NCCL every process loads
 cd $NIMBLE/examples/serving
-export MODEL=/path/to/DeepSeek-V3 SGLANG_VENV=$HOME/sglang-venv SGLANG_DIR=$HOME/sglang-nimble   # every setting: site_env.sh
+export MODEL=$SCRATCH/models/DeepSeek-V3 SGLANG_VENV=$HOME/sglang-venv SGLANG_DIR=$HOME/sglang-nimble   # every setting: site_env.sh
+$HOME/sglang-venv/bin/hf download deepseek-ai/DeepSeek-V3 --revision e815299b0bcbac849fa540c768ef21845365c9eb --local-dir $MODEL   # 642 GB, once
 S="sbatch -N 2"
 $S sglang_server.sh                           # fused
 MODE=dedup $S sglang_server.sh                # dedup
@@ -96,4 +101,4 @@ squeue -u $USER
 grep -h "client: OK\|client: FAILED\|sglang_offline: OK\|sglang_offline: FAILED" slurm-*.out
 ```
 
-A serving run passes when it prints `client: OK; N/M correct ...` (or `sglang_offline: OK; ...`). Each job can take up to 45 minutes on 2 nodes; each node's server log is under `logs/`.
+A serving run passes when it prints `client: OK; N/M correct ...` (or `sglang_offline: OK; ...`); each node's server log is under `logs/`. The first vLLM job compiles its kernels (about 40 minutes on 2 nodes) and saves them to `$VLLM_CACHE_SEED`; the jobs after it, dedup included, start from them in about 10 minutes. An SGLang job takes about 10 minutes. If a path is missing, the job stops before any node starts, and its `slurm-*.out` names the setting and the command that makes it.

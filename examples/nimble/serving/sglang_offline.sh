@@ -12,6 +12,7 @@
 set -u
 HERE=${EXAMPLES_DIR:-${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")" && pwd)}}
 source "$HERE/site_env.sh"
+site_check sglang || exit 1
 MODE=${MODE:-fused} DIST_PORT=${DIST_PORT:-30600}
 HEAD=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -1)
 LOG=${LOG_DIR:-$HERE/logs}/sglang_offline_${MODE}_$SLURM_JOB_ID

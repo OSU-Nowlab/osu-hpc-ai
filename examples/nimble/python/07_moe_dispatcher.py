@@ -7,7 +7,7 @@ and summed over that row's local experts; combine sends them back and sums each 
 
     torchrun --nproc-per-node 4 07_moe_dispatcher.py                    # fused mode, FP8 with 128-element scales
     torchrun --nproc-per-node 4 07_moe_dispatcher.py --dtype bf16       # BF16 activations, no scales
-    torchrun --nproc-per-node 4 07_moe_dispatcher.py --transport torch  # the same dispatcher over NCCL (baseline)
+    torchrun --nproc-per-node 4 07_moe_dispatcher.py --transport torch  # the same dispatcher over NCCL, for comparison
     NIMBLE_DEDUP=1 sbatch -N 2 launch_slurm.sh 07_moe_dispatcher.py --mode dedup   # two or more nodes
 """
 import argparse

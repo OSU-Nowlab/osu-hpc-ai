@@ -6,9 +6,8 @@
 #
 # The environment reaches every rank (srun exports it), so NIMBLE_* variables set before sbatch apply. Add
 # --gpus-per-node=4 where the cluster schedules GPUs as resources. nimble.moe's kernels are Triton's, compiled on
-# first use: Triton gets a cache on each node's /tmp unless TRITON_CACHE_DIR is set (ranks of several nodes compiling
-# into one cache on a shared file system can fail with "Stale file handle") and gcc for its C helpers (a site's
-# default CC, such as NVHPC's nvc, rejects Triton's flags).
+# first use: the script gives Triton a cache on each node's /tmp (TRITON_CACHE_DIR overrides it) and gcc for its C
+# helpers.
 #SBATCH --ntasks-per-node=1
 #SBATCH --exclusive
 #SBATCH --time=00:10:00

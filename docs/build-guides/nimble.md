@@ -51,7 +51,7 @@ Install the wheel in the framework's environment first, then apply NIMBLE's patc
 
 ```bash
 frameworks/nimble/patches/sglang/apply.sh DEST    # clones SGLang into the new directory DEST and applies the patches
-pip install -e DEST/python
+SGLANG_BUILD_RUST_EXTS=none pip install -e DEST/python   # SGLang without its Rust extensions: no Rust toolchain needed
 ```
 
 Run with `--moe-a2a-backend nimble` and `--disable-cuda-graph`, with expert parallelism and DP attention (`--tp-size N --ep-size N --dp-size N --enable-dp-attention`).
