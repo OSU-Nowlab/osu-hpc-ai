@@ -45,9 +45,9 @@ Frameworks must be built in dependency order:
 ## PyTorch
 
 **Repository**: [OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch)  
-**Branch**: See your local HPC-AI PyTorch submodule checkout for the active integration branch  
+**Tag**: [`hpc_ai_v1.1`](https://github.com/OSU-Nowlab/pytorch/tree/hpc_ai_v1.1)  
 **Status**: Production Ready  
-**Version**: 2.10.0
+**Version**: 2.14.1
 
 ### Overview
 
@@ -67,7 +67,7 @@ NOWLAB fork of PyTorch with CUDA-aware MPI support and optimized distributed tra
 
 ```bash
 # Register at https://hpc-ai.engineering.osu.edu
-# Download and install the provided 2.10.0 wheel
+# Download and install the provided wheel
 pip install <provided-wheel-path>
 ```
 

@@ -21,7 +21,7 @@ PyTorch's Distributed Data Parallel (DDP) enables training across multiple GPUs 
 - **Vendor-neutral**: Works across NVIDIA and AMD GPUs
 - **HPC integration**: Native compatibility with SLURM, PBS, and other job schedulers
 
-> **System-specific setup**: build steps and job scripts for each cluster are in the cluster guides: [OLCF Frontier](../cluster-guides/olcf-frontier-setup.md), [TACC Vista](../cluster-guides/tacc-vista-setup.md), [SDSC Cosmos](../cluster-guides/sdsc-cosmos-setup.md), [MRI](../cluster-guides/mri-setup.md).
+> **System-specific setup**: build steps and job scripts for each cluster are in the cluster guides: [OLCF Frontier](../cluster-guides/olcf-frontier-setup.md), [TACC Horizon](../cluster-guides/tacc-horizon-setup.md), [TACC Vista](../cluster-guides/tacc-vista-setup.md), [SDSC Cosmos](../cluster-guides/sdsc-cosmos-setup.md), [MRI](../cluster-guides/mri-setup.md).
 
 ## Prerequisites
 
@@ -249,6 +249,22 @@ export FI_CXI_RDZV_EAGER_SIZE=0
 export FI_CXI_RDZV_THRESHOLD=0
 export FI_CXI_RDZV_GET_MIN=0
 export FI_CXI_RX_MATCH_MODE=hybrid
+```
+
+### NVIDIA GB200 InfiniBand (TACC Horizon)
+
+Horizon nodes have 4 GB200 GPUs and 4 InfiniBand HCAs, and we run one rank per GPU. For the build steps, the per-rank wrapper and the job scripts, see the [TACC Horizon Setup Guide](../cluster-guides/tacc-horizon-setup.md).
+
+**MVAPICH-Plus:**
+
+```bash
+export MPIR_CVAR_ENABLE_GPU=1                     # GPU-aware MPI
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MVP_ENABLE_GPU=1
+export MPIR_CVAR_REDUCE_KERNEL_MAX_NUM_CTAS=32    
+export MPIR_CVAR_REDUCE_KERNEL_MAX_NUM_THREADS=544
+export MPIR_CVAR_PMI_VERSION=1                    # PMI-1 with the Hydra mpirun (what our Horizon runs used)
+export MPIR_CVAR_ALLREDUCE_COMPOSITION=8          # 2+ nodes only: two-level allreduce, GPU IPC within a node, network between nodes
 ```
 
 ### AMD Slingshot (SDSC Cosmos)

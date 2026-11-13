@@ -20,7 +20,7 @@ The OSU HPC-AI stack provides:
 - **Communication Runtime**: MCR-DL for modular, backend-agnostic distributed communication
 - **MoE All-to-All**: NIMBLE, a GPU AllToAllV for irregular traffic with an MoE dispatcher for SGLang and vLLM
 - **Optimized Collective Operations**: GPUDirect RDMA support for high-performance distributed training
-- **HPC-Ready**: Pre-configured for common HPC systems (MRI, Vista, Frontier, etc.)
+- **HPC-Ready**: Pre-configured for common HPC systems (MRI, Vista, Horizon, Frontier, etc.)
 
 ## Architecture
 
@@ -130,6 +130,7 @@ For troubleshooting and cluster-specific setup:
 - [Troubleshooting Guide](docs/troubleshooting.md)
 - [MRI Cluster Setup](docs/cluster-guides/mri-setup.md)
 - [TACC Vista Setup](docs/cluster-guides/tacc-vista-setup.md)
+- [TACC Horizon Setup](docs/cluster-guides/tacc-horizon-setup.md)
 - [OLCF Frontier Setup](docs/cluster-guides/olcf-frontier-setup.md)
 - [SDSC Cosmos Setup](docs/cluster-guides/sdsc-cosmos-setup.md)
 
@@ -329,6 +330,7 @@ We officially support and test on:
 |--------|-------------|------|-------------|--------|
 | MRI Cluster | x86_64 | A100 | CUDA 12.6 | Supported |
 | TACC Vista | ARM64 | GH200 | CUDA 12.5 | Supported |
+| TACC Horizon | ARM64 | GB200 | CUDA 13.2 | Supported |
 | OLCF Frontier | x86_64 | MI250X | ROCm 7.13.0 | Supported |
 | Generic HPC | x86_64 | V100+ | CUDA 11.0+ | Community |
 
@@ -348,6 +350,18 @@ GPT-2 training performance using NanoGPT benchmark on leading HPC systems. MVAPI
 
 <p align="center">
   <img src="docs/assets/frontier.png" alt="GPT-2 DDP on Frontier, 8-512 GPUs, MVAPICH-Plus vs RCCL" width="60%">
+</p>
+
+#### TACC Horizon (NVIDIA GB200)
+
+| CPU | Memory | GPU | Interconnect |
+|-----|--------|-----|--------------|
+| 2x NVIDIA Grace (72 cores each, 144 per node) | 956 GiB LPDDR5X (478 GiB per Grace) | NVIDIA GB200 (4/node, 185 GiB HBM3 each, NVLink between all pairs) | NVIDIA InfiniBand XDR (4 × 800 Gb/s) |
+
+**Benchmark**: GPT-2 (124M), Batch Size 12, Block Size 1024, bf16, Gradient Accumulation 256 (global, strong scaling), PyTorch 2.14.1, CUDA 13.2, 4 GPUs per node, median of 3 runs. MVAPICH-Plus (MPI backend) vs NCCL 2.29.3 (NCCL backend).
+
+<p align="center">
+  <img src="docs/assets/horizon.png" alt="GPT-2 DDP on Horizon, 4-128 GPUs, MVAPICH-Plus vs NCCL" width="60%">
 </p>
 
 #### SDSC Cosmos (AMD CDNA3 APU)
