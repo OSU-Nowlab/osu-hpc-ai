@@ -54,8 +54,9 @@ MAX_JOBS=4 python setup.py install
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
 | **OS** | Linux (kernel 3.10+) | Linux (kernel 5.x+) |
-| **GPU** | NVIDIA (Compute ≥ 6.0) | NVIDIA A100/H100 |
-| **CUDA** | 11.0 | 12.6 |
+| **GPU** | NVIDIA (Compute ≥ 6.0) or AMD MI250X (gfx90a) | NVIDIA A100/H100, AMD MI250X |
+| **CUDA** (NVIDIA) | 11.0 | 12.6 |
+| **ROCm** (AMD) | 7.x | 7.13.0 |
 | **GCC** | 9.0 | 13.3.0 |
 | **Python** | 3.8 | 3.11-3.12 |
 | **RAM** | 32 GB | 128+ GB |

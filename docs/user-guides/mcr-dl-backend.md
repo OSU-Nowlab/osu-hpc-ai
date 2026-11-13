@@ -72,7 +72,7 @@ Both MCR-DL (via MPI) and NCCL are available backends for GPU collectives. Choos
 - Using NVIDIA GPUs on Ethernet or simple IB configurations
 - Integration with frameworks that default to NCCL (e.g., stock PyTorch DDP)
 
-**On TACC Vista and OLCF Frontier**, MCR-DL with MVAPICH-Plus over Slingshot is the recommended backend. On MRI with A100s and InfiniBand, both work but MCR-DL provides more tuning options.
+**On HPC clusters** such as TACC Vista (InfiniBand) and OLCF Frontier (Slingshot), MCR-DL with MVAPICH-Plus is an option alongside NCCL/RCCL. On MRI with A100s and InfiniBand, both work, and MCR-DL provides more tuning options.
 
 ## Quick Start
 
@@ -318,7 +318,7 @@ export MV2_IB_HCA=mlx5_0               # Specify HCA device
 export MV2_NUM_HCAS=1                   # Number of HCAs to use
 ```
 
-### Slingshot-Specific (Vista, Frontier)
+### Slingshot-Specific (Frontier)
 
 ```bash
 export MV2_SLINGSHOT_EAGER_THRESHOLD=65536  # Eager protocol threshold

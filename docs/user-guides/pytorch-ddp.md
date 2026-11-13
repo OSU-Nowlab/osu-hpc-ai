@@ -21,8 +21,7 @@ PyTorch's Distributed Data Parallel (DDP) enables training across multiple GPUs 
 - **Vendor-neutral**: Works across NVIDIA and AMD GPUs
 - **HPC integration**: Native compatibility with SLURM, PBS, and other job schedulers
 
-> **Official Documentation**: For system-specific build scripts and optimized MVAPICH-Plus configurations for TACC Vista, OLCF Frontier, and SDSC Cosmos, see the official HPC-AI userguide:
-> [https://hpc-ai.engineering.osu.edu/userguide/pytorch-ddp/](https://hpc-ai.engineering.osu.edu/userguide/pytorch-ddp/)
+> **System-specific setup**: build steps and job scripts for each cluster are in the cluster guides: [OLCF Frontier](../cluster-guides/olcf-frontier-setup.md), [TACC Vista](../cluster-guides/tacc-vista-setup.md), [SDSC Cosmos](../cluster-guides/sdsc-cosmos-setup.md), [MRI](../cluster-guides/mri-setup.md).
 
 ## Prerequisites
 
@@ -37,7 +36,7 @@ MVAPICH-Plus is the preferred MPI runtime for DDP training with PyTorch on GPUs 
 
 We provide an open-source PyTorch branch with enhanced GPU-Aware MPI support:
 
-- **Repository**: [https://github.com/OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch)
+- **Repository**: [https://github.com/OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch) (tag `hpc_ai_v1.1`, PyTorch 2.14.1)
 - **Official PyTorch Build Guide**: [https://github.com/pytorch/pytorch#installation](https://github.com/pytorch/pytorch#installation)
 
 To enable GPU-Aware MPI when building, add `USE_CUDA_MPI=1` to your setup command:
@@ -45,6 +44,8 @@ To enable GPU-Aware MPI when building, add `USE_CUDA_MPI=1` to your setup comman
 ```bash
 USE_CUDA_MPI=1 USE_MPI=1 python setup.py install
 ```
+
+On AMD GPUs, the same flag enables ROCm-aware MPI. For the full ROCm build on Frontier, see the [OLCF Frontier Setup Guide](../cluster-guides/olcf-frontier-setup.md#step-2-build-pytorch).
 
 ## Quick Start
 
@@ -120,10 +121,11 @@ world_size = dist.get_world_size()
 import os
 import torch.distributed as dist
 
-# MPI provides these automatically, but you can access them
-rank = int(os.environ.get('OMPI_COMM_WORLD_RANK', 0))
-world_size = int(os.environ.get('OMPI_COMM_WORLD_SIZE', 1))
-local_rank = int(os.environ.get('OMPI_COMM_WORLD_LOCAL_RANK', 0))
+# MPI provides these automatically, but you can access them.
+# MVAPICH-Plus mpirun sets PMI_* / MPI_LOCALRANKID; srun sets SLURM_*.
+rank = int(os.environ.get('PMI_RANK', os.environ.get('SLURM_PROCID', 0)))
+world_size = int(os.environ.get('PMI_SIZE', os.environ.get('SLURM_NTASKS', 1)))
+local_rank = int(os.environ.get('MPI_LOCALRANKID', os.environ.get('SLURM_LOCALID', 0)))
 
 dist.init_process_group(backend='mpi')
 ```
@@ -212,7 +214,44 @@ export MPIR_CVAR_ALLREDUCE_COMPOSITION=2
 export MPIR_CVAR_ALLREDUCE_IPC_MSG_SIZE_THRESHOLD=65536
 ```
 
-### AMD Slingshot Networks (Frontier, Cosmos)
+### AMD MI250X Slingshot (OLCF Frontier)
+
+These settings were used for the PyTorch 2.14.1 release runs on Frontier: GPT-2 DDP, bf16, 1-64 nodes, 8 ranks per node, ROCm 7.13.0. For the full build steps and job scripts, see the [OLCF Frontier Setup Guide](../cluster-guides/olcf-frontier-setup.md).
+
+**MVAPICH-Plus:**
+
+```bash
+export MPIR_CVAR_ENABLE_GPU=1                                 # GPU-aware MPI
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPIR_CVAR_CH4_OFI_ENABLE_HMEM=1                        # pass GPU buffers to libfabric
+export MPIR_CVAR_CH4_OFI_ENABLE_MR_HMEM=1                     # register GPU memory with the NIC
+export MPIR_CVAR_ALLREDUCE_COMPOSITION=8                      # two-level allreduce: GPU IPC within a node, network between nodes
+export MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=osu_gpu_rsa        # network-side allreduce algorithm
+export MPIR_CVAR_ALLREDUCE_GPU_RING_THRESHOLD=67108864        # 64 MB: messages at or above this use the intra-node IPC ring
+export MPIR_CVAR_ALLREDUCE_PIPELINE_2LVL_GPU_THRESHOLD=8388608  # 8 MB
+export MPIR_CVAR_ALLREDUCE_PIPELINE_2LVL_GPU_NUM_CHUNKS=1
+export MPIR_CVAR_FORCE_GPU_QUERY_ATTR=1
+export MPIR_CVAR_ALLGATHER_COMPOSITION=1
+export MVP_ENABLE_GPU_PTRCACHE=0
+export HSA_XNACK=1
+```
+
+**Slingshot / libfabric** (the same values the `rccl-net-plugin/1.0` module sets for RCCL, so both backends run with the same network settings):
+
+```bash
+export HSA_FORCE_FINE_GRAIN_PCIE=1
+export FI_MR_CACHE_MONITOR=kdreg2
+export FI_CXI_DISABLE_HOST_REGISTER=1
+export FI_CXI_DEFAULT_CQ_SIZE=131072
+export FI_CXI_DEFAULT_TX_SIZE=2048
+export FI_CXI_RDZV_PROTO=alt_read
+export FI_CXI_RDZV_EAGER_SIZE=0
+export FI_CXI_RDZV_THRESHOLD=0
+export FI_CXI_RDZV_GET_MIN=0
+export FI_CXI_RX_MATCH_MODE=hybrid
+```
+
+### AMD Slingshot (SDSC Cosmos)
 
 ```bash
 export MPIR_CVAR_ENABLE_GPU=1
@@ -342,8 +381,8 @@ python -c "import torch.distributed as dist; print(dist.is_mpi_available())"
 
 **Solution**: Set device based on local rank:
 ```python
-local_rank = int(os.environ.get('OMPI_COMM_WORLD_LOCAL_RANK', 0))
-device = torch.device(f'cuda:{local_rank}')
+local_rank = int(os.environ.get('MPI_LOCALRANKID', os.environ.get('SLURM_LOCALID', 0)))
+device = torch.device(f'cuda:{local_rank % torch.cuda.device_count()}')
 torch.cuda.set_device(device)
 ```
 
@@ -367,7 +406,6 @@ torch.cuda.set_device(device)
 
 ## Additional Resources
 
-- [HPC-AI PyTorch DDP Userguide](https://hpc-ai.engineering.osu.edu/userguide/pytorch-ddp/) - Official guide with system-specific examples
 - [MVAPICH-Plus Documentation](https://mvapich-docs.readthedocs.io/en/mvapich-plus/)
 - [MVAPICH-Plus Downloads](https://mvapich.cse.ohio-state.edu/downloads/)
 - [PyTorch Distributed Overview](https://pytorch.org/tutorials/beginner/dist_overview.html)

@@ -20,7 +20,7 @@ The OSU HPC-AI stack provides:
 - **Communication Runtime**: MCR-DL for modular, backend-agnostic distributed communication
 - **MoE All-to-All**: NIMBLE, a GPU AllToAllV for irregular traffic with an MoE dispatcher for SGLang and vLLM
 - **Optimized Collective Operations**: GPUDirect RDMA support for high-performance distributed training
-- **HPC-Ready**: Pre-configured for common HPC systems (MRI, Vista, etc.)
+- **HPC-Ready**: Pre-configured for common HPC systems (MRI, Vista, Frontier, etc.)
 
 ## Architecture
 
@@ -34,7 +34,7 @@ The OSU HPC-AI stack provides:
 ```
 osu-hpc-ai/
 ├── frameworks/              # Deep learning framework submodules
-│   ├── pytorch/            # PyTorch 2.10.0 with MVAPICH-Plus
+│   ├── pytorch/            # PyTorch 2.14.1 with MVAPICH-Plus (tag hpc_ai_v1.1)
 │   ├── deepspeed/          # DeepSpeed with ZeRO optimization
 │   ├── sglang/             # SGLang structured generation
 │   ├── vllm/               # vLLM high-throughput inference
@@ -72,9 +72,10 @@ osu-hpc-ai/
 
 ### Prerequisites
 
-- **System**: HPC cluster with NVIDIA GPUs (Compute Capability ≥ 6.0)
-- **CUDA**: Version 11.0+ (12.x recommended)
-- **GCC**: Version 9.0+ (13.3.0 recommended)
+- **System**: HPC cluster with NVIDIA GPUs (Compute Capability ≥ 6.0) or AMD GPUs (MI250X / gfx90a tested)
+- **CUDA**: Version 11.0+ (12.x recommended) on NVIDIA systems
+- **ROCm**: Version 7.x (7.13.0 tested on OLCF Frontier) on AMD systems
+- **GCC**: Version 9.0+ (13.x recommended)
 - **Python**: Version 3.8-3.12
 
 ### Installation
@@ -97,7 +98,7 @@ We provide pre-built wheels for common configurations:
 git clone --recursive https://github.com/OSU-Nowlab/osu-hpc-ai.git
 cd osu-hpc-ai
 
-# Build PyTorch with MPI support
+# Build PyTorch with MPI support (NVIDIA / CUDA)
 cd frameworks/pytorch
 export USE_CUDA=1 USE_MPI=1
 MAX_JOBS=4 python setup.py install
@@ -136,10 +137,11 @@ For troubleshooting and cluster-specific setup:
 
 ### MVAPICH-Plus
 
-High-performance CUDA-aware MPI library with GPUDirect RDMA support.
+High-performance GPU-aware MPI library (CUDA and ROCm) with GPUDirect RDMA support.
 
 - **Version**: 4.1+
-- **Features**: CUDA/ROCm support, UCX backend, GPUDirect RDMA
+- **Features**: CUDA/ROCm support, UCX backend (InfiniBand), OFI/libfabric backend (HPE Slingshot), GPUDirect RDMA
+- **Download**: [mvapich.cse.ohio-state.edu/downloads](https://mvapich.cse.ohio-state.edu/downloads/)
 - **Documentation**: [MVAPICH User Guide](http://mvapich.cse.ohio-state.edu/userguide/)
 
 ### PyTorch
@@ -256,7 +258,7 @@ See [benchmarks/README.md](benchmarks/README.md) for more benchmarking options.
 ### Distributed Training with PyTorch + MPI
 
 ```python
-# examples/pytorch/distributed_training.py
+# Minimal DDP pattern; see examples/pytorch/simple_distributed.py for a runnable version
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -278,7 +280,7 @@ for batch in dataloader:
 
 Run with:
 ```bash
-mpiexec -n 4 python examples/pytorch/distributed_training.py
+mpiexec -n 4 python examples/pytorch/simple_distributed.py
 ```
 
 ### DeepSpeed Training
@@ -323,29 +325,29 @@ See [examples/](examples/) for more examples.
 
 We officially support and test on:
 
-| System | Architecture | GPUs | CUDA | Status |
-|--------|-------------|------|------|--------|
-| MRI Cluster | x86_64 | A100 | 12.6 | Supported |
-| TACC Vista | ARM64 | GH200 | 12.5 | Supported |
-| Generic HPC | x86_64 | V100+ | 11.0+ | Community |
+| System | Architecture | GPUs | CUDA / ROCm | Status |
+|--------|-------------|------|-------------|--------|
+| MRI Cluster | x86_64 | A100 | CUDA 12.6 | Supported |
+| TACC Vista | ARM64 | GH200 | CUDA 12.5 | Supported |
+| OLCF Frontier | x86_64 | MI250X | ROCm 7.13.0 | Supported |
+| Generic HPC | x86_64 | V100+ | CUDA 11.0+ | Community |
 
 ## Performance
 
 ### PyTorch Distributed Data Parallel with MVAPICH-Plus
 
-GPT-2 training performance using NanoGPT benchmark on leading HPC systems. MVAPICH-Plus provides competitive or superior performance compared to vendor-optimized communication libraries.
+GPT-2 training performance using NanoGPT benchmark on leading HPC systems. MVAPICH-Plus provides performance competitive with vendor-optimized communication libraries.
 
 #### OLCF Frontier (AMD MI250X)
 
 | CPU | Memory | GPU | Interconnect |
 |-----|--------|-----|--------------|
-| AMD EPYC 7A53 (64 cores @ 2GHz) | 512 GB DDR4 | AMD MI250X (4/Node, 128 GB HBM2e) | HPE Slingshot (200 Gb/s) |
+| AMD EPYC 7A53 (64 cores @ 2GHz) | 512 GB DDR4 | AMD MI250X (4/node, 2 GCDs each = 8 GPUs, 64 GB HBM2e per GCD) | HPE Slingshot-11 (4 NICs × 200 Gb/s) |
 
-**Benchmark**: GPT-2, Batch Size 12, Block Size 1024, PyTorch 2.10.0
+**Benchmark**: GPT-2 (124M), Batch Size 12, Block Size 1024, bf16, Gradient Accumulation 512 (global, strong scaling), PyTorch 2.14.1, ROCm 7.13.0, 8 GPUs (GCDs) per node, median of 3 runs. MVAPICH-Plus (MPI backend) vs RCCL 2.28.3 (NCCL backend).
 
 <p align="center">
-  <img src="docs/assets/frontier-1.png" alt="GPT-2 on Frontier 1-8 GPU" width="45%">
-  <img src="docs/assets/frontier-2.png" alt="GPT-2 on Frontier 16-128 GPU" width="45%">
+  <img src="docs/assets/frontier.png" alt="GPT-2 DDP on Frontier, 8-512 GPUs, MVAPICH-Plus vs RCCL" width="60%">
 </p>
 
 #### SDSC Cosmos (AMD CDNA3 APU)

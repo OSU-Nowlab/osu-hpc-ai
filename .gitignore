@@ -237,3 +237,6 @@ profile_traces/
 *.sqlite
 recipe/*/results/*
 !recipe/*/results/.gitkeep
+
+# macOS
+.DS_Store

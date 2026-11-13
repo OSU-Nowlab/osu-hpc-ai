@@ -4,9 +4,11 @@ Get up and running with the OSU HPC-AI stack in minutes.
 
 ## Prerequisites
 
-- HPC cluster with NVIDIA GPUs
-- Access to module system (gcc, cuda)
+- HPC cluster with NVIDIA/AMD GPUs
+- Access to module system (gcc, cuda/rocm)
 - SSH access to build nodes
+
+The steps below use the MRI cluster (NVIDIA). For other clusters, see [docs/cluster-guides/](docs/cluster-guides/).
 
 ## Option 1: Using Pre-built Wheels (Fastest)
 
