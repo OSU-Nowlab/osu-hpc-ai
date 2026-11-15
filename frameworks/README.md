@@ -45,7 +45,7 @@ Frameworks must be built in dependency order:
 ## PyTorch
 
 **Repository**: [OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch)  
-**Tag**: [`hpc_ai_v1.1`](https://github.com/OSU-Nowlab/pytorch/tree/hpc_ai_v1.1)  
+**Tag**: [`hpc_ai_v2.0`](https://github.com/OSU-Nowlab/pytorch/tree/hpc_ai_v2.0)  
 **Status**: Production Ready  
 **Version**: 2.14.1
 

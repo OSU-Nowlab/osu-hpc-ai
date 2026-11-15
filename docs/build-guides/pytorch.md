@@ -31,13 +31,13 @@ Building PyTorch with MVAPICH-Plus integration enables:
 - Custom optimizations: Target specific hardware (A100 GPUs)
 
 **Key Features of This Build:**
-- PyTorch 2.10.0 from the OSU-Nowlab fork
+- PyTorch 2.14.1 from the OSU-Nowlab fork
 - CUDA 12.6 support with compute capability 6.0-9.0
 - MVAPICH-Plus 4.1 integration
 - NCCL 2.26.4 for multi-GPU communication
 - GCC 13.3.0 toolchain
 
-**Note:** This guide now targets the HPC-AI PyTorch 2.10.0 integration. Check your local `frameworks/pytorch` checkout for the exact branch or commit you are building.
+**Note:** This guide now targets the HPC-AI PyTorch 2.14.1 integration (tag `hpc_ai_v2.0`). Check your local `frameworks/pytorch` checkout for the exact branch or commit you are building.
 
 ## Prerequisites
 
@@ -69,7 +69,7 @@ Building PyTorch with MVAPICH-Plus integration enables:
 ```bash
 MVAPICH_HOME=~/osu-hpc-ai-dev/install/mvapich-plus-4.1-cuda12.6
 NCCL_HOME=~/osu-hpc-ai-dev/libext/nccl/build
-PYTORCH_SRC=~/osu-hpc-ai/frameworks/pytorch   # branch: hpc_ai_v1.0
+PYTORCH_SRC=~/osu-hpc-ai/frameworks/pytorch   # tag: hpc_ai_v2.0
 ```
 
 ## Quick Start
@@ -178,7 +178,7 @@ pip install pyyaml typing-extensions numpy ninja cmake
 
 ```bash
 # Clone the OSU-Nowlab PyTorch fork (if not already present)
-git clone -b hpc_ai_v1.0 https://github.com/OSU-Nowlab/pytorch.git \
+git clone -b hpc_ai_v2.0 https://github.com/OSU-Nowlab/pytorch.git \
   ~/osu-hpc-ai/frameworks/pytorch
 
 cd ~/osu-hpc-ai/frameworks/pytorch

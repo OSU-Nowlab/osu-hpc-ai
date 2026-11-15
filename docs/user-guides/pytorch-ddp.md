@@ -36,7 +36,7 @@ MVAPICH-Plus is the preferred MPI runtime for DDP training with PyTorch on GPUs 
 
 We provide an open-source PyTorch branch with enhanced GPU-Aware MPI support:
 
-- **Repository**: [https://github.com/OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch) (tag `hpc_ai_v1.1`, PyTorch 2.14.1)
+- **Repository**: [https://github.com/OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch) (tag `hpc_ai_v2.0`, PyTorch 2.14.1)
 - **Official PyTorch Build Guide**: [https://github.com/pytorch/pytorch#installation](https://github.com/pytorch/pytorch#installation)
 
 To enable GPU-Aware MPI when building, add `USE_CUDA_MPI=1` to your setup command:

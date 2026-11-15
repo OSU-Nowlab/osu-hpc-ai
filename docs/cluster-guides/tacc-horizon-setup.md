@@ -36,7 +36,7 @@ These versions were used for the PyTorch 2.14.1 release runs (GPT-2 / nanoGPT DD
 
 | Component       | Version                                                                                                                                                                    |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PyTorch         | [OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch) tag [`hpc_ai_v1.1`](https://github.com/OSU-Nowlab/pytorch/tree/hpc_ai_v1.1) (PyTorch 2.14.1, commit `8bca794`) |
+| PyTorch         | [OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch) tag [`hpc_ai_v2.0`](https://github.com/OSU-Nowlab/pytorch/tree/hpc_ai_v2.0) (PyTorch 2.14.1, commit `8bca794`) |
 | MVAPICH-Plus    | CUDA build, `ch4:ucx`                                                                                                                                                      |
 | CUDA            | 13.2 (`module load cuda/13.2`, from NVIDIA HPC SDK 26.5), driver 595.71.05                                                                                                 |
 | NCCL (baseline) | 2.29.3 (ships with NVIDIA HPC SDK 26.5)                                                                                                                                    |
@@ -108,7 +108,7 @@ $MVP_HOME/bin/mpichversion     # check: ch4:ucx device, CUDA enabled
 ### 2.1 Get the source
 
 ```bash
-git clone -b hpc_ai_v1.1 https://github.com/OSU-Nowlab/pytorch.git
+git clone -b hpc_ai_v2.0 https://github.com/OSU-Nowlab/pytorch.git
 cd pytorch
 git submodule sync
 git submodule update --init --recursive

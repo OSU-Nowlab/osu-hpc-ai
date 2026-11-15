@@ -34,7 +34,7 @@ The OSU HPC-AI stack provides:
 ```
 osu-hpc-ai/
 ├── frameworks/              # Deep learning framework submodules
-│   ├── pytorch/            # PyTorch 2.14.1 with MVAPICH-Plus (tag hpc_ai_v1.1)
+│   ├── pytorch/            # PyTorch 2.14.1 with MVAPICH-Plus (tag hpc_ai_v2.0)
 │   ├── deepspeed/          # DeepSpeed with ZeRO optimization
 │   ├── sglang/             # SGLang structured generation
 │   ├── vllm/               # vLLM high-throughput inference
