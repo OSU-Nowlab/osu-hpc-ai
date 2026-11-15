@@ -34,7 +34,7 @@ These versions were used for the PyTorch 2.14.1 release runs (GPT-2 / nanoGPT DD
 
 | Component | Version |
 |-----------|---------|
-| PyTorch | [OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch) tag [`hpc_ai_v1.1`](https://github.com/OSU-Nowlab/pytorch/tree/hpc_ai_v1.1) (PyTorch 2.14.1, commit `8bca794`) |
+| PyTorch | [OSU-Nowlab/pytorch](https://github.com/OSU-Nowlab/pytorch) tag [`hpc_ai_v2.0`](https://github.com/OSU-Nowlab/pytorch/tree/hpc_ai_v2.0) (PyTorch 2.14.1, commit `8bca794`) |
 | MVAPICH-Plus | 5.1 (pre-release), ROCm build, `ch4:ofi` |
 | ROCm | 7.0.0 (`rocm/7.0.0`) |
 | RCCL (baseline) | 2.26.6 (ships with ROCm 7.0.0) + `nccl-net-plugin` (aws-ofi-nccl) |
@@ -110,7 +110,7 @@ make -j16 install
 ### 2.1 Get the source
 
 ```bash
-git clone -b hpc_ai_v1.1 https://github.com/OSU-Nowlab/pytorch.git
+git clone -b hpc_ai_v2.0 https://github.com/OSU-Nowlab/pytorch.git
 cd pytorch
 git submodule sync
 git submodule update --init --recursive
